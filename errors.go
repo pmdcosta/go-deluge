@@ -8,6 +8,7 @@ func (e Error) Error() string { return string(e) }
 
 // Deluge RPC errors.
 const (
-	ErrAuthFailed  = Error("authentication failed")
-	ErrInvalidResp = Error("invalid response received")
+	ErrAuthFailed     = Error("authentication failed")
+	ErrInvalidResp    = Error("invalid response received")
+	ErrInvalidTorrent = Error("invalid torrent url")
 )

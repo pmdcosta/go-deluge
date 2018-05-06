@@ -26,7 +26,7 @@ type Client struct {
 	lock sync.Mutex
 
 	// service for for interacting with deluge.
-	Service Service
+	service Service
 }
 
 // NewClient returns a new deluge client.
@@ -38,7 +38,7 @@ func NewClient(url string, password string) *Client {
 		cookies:  nil,
 		id:       0,
 	}
-	c.Service.client = c
+	c.service.client = c
 
 	return c
 }
@@ -61,6 +61,9 @@ func (c *Client) Open() error {
 func (c *Client) Close() error {
 	return nil
 }
+
+// service returns the service used to communicate with Deluge.
+func (c *Client) Service() *Service { return &c.service }
 
 // sendRequest makes an HTTP request to the Deluge server.
 func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]interface{}, error) {

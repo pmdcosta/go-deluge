@@ -8,7 +8,7 @@ import (
 func TestService_AddTorrentMagnet(t *testing.T) {
 	c := MustOpenClient()
 	defer c.Close()
-	_, err := c.Service.AddTorrentMagnet(c.Env.Magnet, nil)
+	_, err := c.Service().AddTorrentMagnet(c.Env.Magnet, nil)
 
 	if err != nil {
 		t.Fatalf("failed to add magnet: %v", err)
@@ -19,7 +19,7 @@ func TestService_AddTorrentMagnet(t *testing.T) {
 func TestService_AddTorrentUrl(t *testing.T) {
 	c := MustOpenClient()
 	defer c.Close()
-	_, err := c.Service.AddTorrentUrl(c.Env.Torrent, nil)
+	_, err := c.Service().AddTorrentUrl(c.Env.Torrent, nil)
 
 	if err != nil {
 		t.Fatalf("failed to add magnet: %v", err)

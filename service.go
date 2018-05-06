@@ -1,6 +1,6 @@
 package deluge
 
-// Service represents a service for interacting with deluge.
+// service represents a service for interacting with deluge.
 type Service struct {
 	client *Client
 }
@@ -9,6 +9,10 @@ type Service struct {
 // magnetUrl is the Magnet URL for the torrent.
 // options is a map with options to be set. (check the Deluge Torrent documentation).
 func (s *Service) AddTorrentMagnet(magnetUrl string, options map[string]interface{}) (string, error) {
+	if magnetUrl == "" {
+		return "", ErrInvalidTorrent
+	}
+
 	response, err := s.client.sendRequest(ADD_MAGNET, magnetUrl, options)
 	if err != nil {
 		return "", err
@@ -25,6 +29,10 @@ func (s *Service) AddTorrentMagnet(magnetUrl string, options map[string]interfac
 // torrentUrl is the URL for the torrent.
 // options is a map with options to be set. (check the Deluge Torrent documentation).
 func (s *Service) AddTorrentUrl(torrentUrl string, options map[string]interface{}) (string, error) {
+	if torrentUrl == "" {
+		return "", ErrInvalidTorrent
+	}
+
 	response, err := s.client.sendRequest(ADD_TORRENT_URL, torrentUrl, options)
 	if err != nil {
 		return "", err
