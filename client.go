@@ -45,6 +45,19 @@ func NewClient(url string, password string) *Client {
 
 // Open starts the client and connects to the Deluge server.
 func (c *Client) Open() error {
+	return c.auth()
+}
+
+// Close stops the client.
+func (c *Client) Close() error {
+	return nil
+}
+
+// service returns the service used to communicate with Deluge.
+func (c *Client) Service() *Service { return &c.service }
+
+// auth attempts to authenticate the connection with the the Deluge server.
+func (c *Client) auth() error {
 	response, err := c.sendRequest(AUTH, c.Password)
 	if err != nil {
 		return err
@@ -56,14 +69,6 @@ func (c *Client) Open() error {
 
 	return nil
 }
-
-// Close stops the client.
-func (c *Client) Close() error {
-	return nil
-}
-
-// service returns the service used to communicate with Deluge.
-func (c *Client) Service() *Service { return &c.service }
 
 // sendRequest makes an HTTP request to the Deluge server.
 func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]interface{}, error) {

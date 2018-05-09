@@ -5,6 +5,11 @@ type Service struct {
 	client *Client
 }
 
+// Auth attempts to authenticate the connection with the the Deluge server.
+func (s *Service) Auth() error {
+	return s.client.auth()
+}
+
 // AddTorrentMagnet starts downloading a magnet link.
 // magnetUrl is the Magnet URL for the torrent.
 // options is a map with options to be set. (check the Deluge Torrent documentation).
