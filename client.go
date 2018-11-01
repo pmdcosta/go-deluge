@@ -7,78 +7,63 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
-// Client represents a client for managing Deluge RPC requests.
+// Client handles the connection and interface for managing Deluge RPC requests
 type Client struct {
-	// deluge daemon auth.
+	logger *logrus.Entry
+
+	// deluge daemon credentials
 	Url      string
 	Password string
 
-	// http client.
+	// underlying http client
 	client  *http.Client
 	cookies []*http.Cookie
+	lock    sync.Mutex
 
-	// request counter.
+	// deluge request counter
 	id int
-
-	// client locker.
-	lock sync.Mutex
-
-	// service for for interacting with deluge.
-	service Service
 }
 
-// NewClient returns a new deluge client.
-func NewClient(url string, password string) *Client {
-	c := &Client{
+// NewClient instantiates a new client
+func NewClient(url string, password string, logger *logrus.Logger) *Client {
+	return &Client{
 		Url:      url,
 		Password: password,
-		client:   new(http.Client),
-		cookies:  nil,
-		id:       0,
+		logger:   logger.WithFields(logrus.Fields{"client": "deluge-go"}),
 	}
-	c.service.client = c
-
-	return c
 }
 
-// Open starts the client and connects to the Deluge server.
-func (c *Client) Open() error {
-	return c.auth()
+// Open creates the connection to the Deluge daemon
+func (c *Client) Open() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.client = new(http.Client)
+	c.cookies = nil
+	c.id = 0
 }
 
-// Close stops the client.
-func (c *Client) Close() error {
-	return nil
+// Close stops the connection to the Deluge daemon
+func (c *Client) Close() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.client = nil
+	c.cookies = nil
+	c.id = 0
 }
 
-// service returns the service used to communicate with Deluge.
-func (c *Client) Service() *Service { return &c.service }
-
-// auth attempts to authenticate the connection with the the Deluge server.
-func (c *Client) auth() error {
-	response, err := c.sendRequest(AUTH, c.Password)
-	if err != nil {
-		return err
-	}
-
-	if response["result"] != true {
-		return ErrAuthFailed
-	}
-
-	return nil
-}
-
-// sendRequest makes an HTTP request to the Deluge server.
+// sendRequest makes an HTTP request to the Deluge daemon
 func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]interface{}, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	// set request id.
+	// increment request id
 	c.id++
 
-	// build request data.
+	// build http request body
 	data, err := json.Marshal(map[string]interface{}{
 		"method": method,
 		"id":     c.id,
@@ -88,7 +73,7 @@ func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]i
 		return nil, err
 	}
 
-	// build http request.
+	// build http request
 	req, err := http.NewRequest("POST", c.Url, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
@@ -100,15 +85,15 @@ func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]i
 		}
 	}
 
-	// make http request.
+	// make http request
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// parse response.
-	if resp.StatusCode != 200 {
+	// parse response
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("invalid status code: %d", resp.StatusCode)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
@@ -116,16 +101,17 @@ func (c *Client) sendRequest(method Method, params ...interface{}) (map[string]i
 		return nil, err
 	}
 
-	// save cookies.
+	// save cookies
 	c.cookies = resp.Cookies()
 
-	// build request result.
+	// build request result
 	result := make(map[string]interface{})
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
 	}
 
+	// check if successful
 	if result["error"] != nil {
 		return nil, fmt.Errorf("json error: %v", result["error"])
 	}

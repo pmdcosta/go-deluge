@@ -1,0 +1,6 @@
+version: '3.7'
+services:
+  deluge:
+    image: linuxserver/deluge:latest
+    container_name: deluged
+    network_mode: host
